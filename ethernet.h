@@ -27,13 +27,23 @@
 static void Eth_SwitchControlRegisterBank(uint8_t bank);
 
 uint8_t Eth_ReadControlRegister(uint8_t addr);
+uint16_t Eth_ReadControlRegister_16(uint8_t addr);
+
 uint8_t Eth_ReadBufferMemory(void);
+
 void Eth_WriteControlRegister(uint8_t addr, uint8_t data);
+void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data);
+
 void Eth_WriteBufferMemory(uint8_t data);
 void Eth_BitFieldSet(uint8_t addr, uint8_t data);
 void Eth_BitFieldClear(uint8_t addr, uint8_t data);
 void Eth_SystemResetCommand(void);
 
+// PHY registers
+uint16_t PHY_ReadRegister(uint8_t addr);
+void PHY_WriteRegister(uint8_t addr, uint16_t data);
+
+uint8_t ENC28J60_Init(void);
 
 
 #endif
