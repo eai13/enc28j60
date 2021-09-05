@@ -12,9 +12,6 @@ static uint8_t current_bank = 0x00;
 static void Eth_SwitchControlRegisterBank(uint8_t bank){
     Eth_WriteControlRegister(ECON1, (ECON1_BSEL0 | ECON1_BSEL1) & bank);
     current_bank = bank & (ECON1_BSEL0 | ECON1_BSEL1);
-    int8_t str[32];
-    snprintf(str, 31, "ENC28J60 Bank Switch %d\r\n", current_bank); // TODO: delete after debug
-    print_db(str);
 }
 
 /**
@@ -44,7 +41,7 @@ uint8_t Eth_ReadControlRegister(uint8_t addr){
  * @return data
  */
 uint16_t Eth_ReadControlRegister_16(uint8_t addr){
-    return (Eth_ReadControlRegister(addr) | (Eth_ReadControlRegister(addr + 1) << 8));
+    return (Eth_ReadControlRegister(addr) | ((uint16_t)Eth_ReadControlRegister(addr + 1) << 8));
 }
 
 // TODO: function not tested
@@ -123,33 +120,42 @@ void Eth_BitFieldClear(uint8_t addr, uint8_t data){
     CS_DESEL;
 }
 
-// TODO: function not tested
+/**
+ * @brief Soft reset implementation
+ */
 void Eth_SystemResetCommand(void){
     uint8_t addr = ETH_OPCODE_SRC | 0x1F;
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
     CS_DESEL;
+    HAL_Delay(1);
     RESET_BANK;
-    print_db("ENC28J60 Controller Reset\r\n");
+    Eth_BitFieldClear(MICMD, MICMD_MIIRD); // Resetting the bit (dont know for what)
 }
 
 /**
  * @brief PHY register reading
  * @param addr PHY register address
  * @return PHY register data
- */ // TODO: implement PHY reading
+ */
 uint16_t PHY_ReadRegister(uint8_t addr){
     Eth_WriteControlRegister(MIREGADR, addr);
-    return addr;
+    Eth_BitFieldSet(MICMD, MICMD_MIIRD);
+    while(Eth_ReadControlRegister(MISTAT) & MISTAT_BUSY);
+    Eth_BitFieldClear(MICMD, MICMD_MIIRD);
+    return Eth_ReadControlRegister_16(MIRDL);
 }
 
 /**
  * @brief PHY register writing
  * @param addr PHY register address
  * @param data data to write
- */ // TODO: implement PHY writing
+ */
 void PHY_WriteRegister(uint8_t addr, uint16_t data){
-
+    Eth_WriteControlRegister(MIREGADR, addr);
+    Eth_WriteControlRegister(MIWRL, (uint8_t)data);
+    Eth_WriteControlRegister(MIWRH, (uint8_t)(data >> 8));
+    while(Eth_ReadControlRegister(MISTAT) & MISTAT_BUSY);
 }
 
 

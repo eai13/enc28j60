@@ -27,47 +27,47 @@
 
 // ENC28J60 PHY Registers
 #define PHCON1      (0x00)  // PHY control register 1
-    #define PHCON1_PRST     (15) // PHY software reset
-    #define PHCON1_PLOOPBK  (14) // PHY loopback
-    #define PHCON1_PPWRSV   (11) // PHY power-down
-    #define PHCON1_PDPXMD   (8)  // PHY duplex mode
+    #define PHCON1_PRST     (uint16_t)(1 << 15) // PHY software reset
+    #define PHCON1_PLOOPBK  (uint16_t)(1 << 14) // PHY loopback
+    #define PHCON1_PPWRSV   (uint16_t)(1 << 11) // PHY power-down
+    #define PHCON1_PDPXMD   (uint16_t)(1 << 8)  // PHY duplex mode
 #define PHSTAT1     (0x01)  // Physical layer status register 1
-    #define PHSTAT1_PFDPX   (12) // PHY full-duplex capable 
-    #define PHSTAT1_PHDPX   (11) // PHY half-duplex capable
-    #define PHSTAT1_LLSTAT  (2)  // PHY latching link status
-    #define PHSTAT1_JBSTAT  (1)  // PHY latching jabber status
+    #define PHSTAT1_PFDPX   (uint16_t)(1 << 12) // PHY full-duplex capable 
+    #define PHSTAT1_PHDPX   (uint16_t)(1 << 11) // PHY half-duplex capable
+    #define PHSTAT1_LLSTAT  (uint16_t)(1 << 2)  // PHY latching link status
+    #define PHSTAT1_JBSTAT  (uint16_t)(1 << 1)  // PHY latching jabber status
 #define PHID1       (0x02)  // PHY identifier (0x0083)
 #define PHID2       (0x03)  // PHY indentifier (000101) | PHY P/N (0x00) | PHY revision (0x00)
 #define PHCON2      (0x10)  // PHY control register 2
-    #define PHCON2_FRCLNK   (14) // PHY force linkup bit
-    #define PHCON2_TXDIS    (13) // Twisted-pair transmitter disable
-    #define PHCON2_JABBER   (10) // Jabber correction disable
-    #define PHCON2_HDLDIS   (8)  // PHY half-duplex loopback disable bit
+    #define PHCON2_FRCLNK   (uint16_t)(1 << 14) // PHY force linkup bit
+    #define PHCON2_TXDIS    (uint16_t)(1 << 13) // Twisted-pair transmitter disable
+    #define PHCON2_JABBER   (uint16_t)(1 << 10) // Jabber correction disable
+    #define PHCON2_HDLDIS   (uint16_t)(1 << 8)  // PHY half-duplex loopback disable bit
 #define PHSTAT2     (0x11)  // Physical layer status register 2
-    #define PHSTAT2_TXSTAT  (13) // PHY transmit status
-    #define PHSTAT2_RXSTAT  (12) // PHY receive status
-    #define PHSTAT2_COLSTAT (11) // PHY collision status
-    #define PHSTAT2_LSTAT   (10) // PHY link status (non-latching)
-    #define PHSTAT2_DPXSTAT (9)  // PHY duplex status
-    #define PHSTAT2_PLRITY  (5)  // Polarity status
+    #define PHSTAT2_TXSTAT  (uint16_t)(1 << 13) // PHY transmit status
+    #define PHSTAT2_RXSTAT  (uint16_t)(1 << 12) // PHY receive status
+    #define PHSTAT2_COLSTAT (uint16_t)(1 << 11) // PHY collision status
+    #define PHSTAT2_LSTAT   (uint16_t)(1 << 10) // PHY link status (non-latching)
+    #define PHSTAT2_DPXSTAT (uint16_t)(1 << 9)  // PHY duplex status
+    #define PHSTAT2_PLRITY  (uint16_t)(1 << 5)  // Polarity status
 #define PHIE        (0x12)  // PHY interrupt enable register
-    #define PHIE_PLNKIE     (4)  // PHY link change interrupt enable
-    #define PHIE_PGEIE      (1)  // PHY global interrupt enable
+    #define PHIE_PLNKIE     (uint16_t)(1 << 4)  // PHY link change interrupt enable
+    #define PHIE_PGEIE      (uint16_t)(1 << 1)  // PHY global interrupt enable
 #define PHIR        (0x13)  // PHY interrupt request register
-    #define PHIR_PLNKIF     (4)  // PHY link change interrupt flag
-    #define PHIR_PGIF       (2)  // PHY global interrupt flag
+    #define PHIR_PLNKIF     (uint16_t)(1 << 4)  // PHY link change interrupt flag
+    #define PHIR_PGIF       (uint16_t)(1 << 2)  // PHY global interrupt flag
 #define PHLCON      (0x14)  // PHY module LED control register
-    #define PHLCON_LACFG3   (11) // LED A configuration bits
-    #define PHLCON_LACFG2   (10) // ...
-    #define PHLCON_LACFG1   (9)  // ...
-    #define PHLCON_LACFG0   (8)  // ...
-    #define PHLCON_LBCFG3   (7)  // LED B configuration bits
-    #define PHLCON_LBCFG2   (6)  // ...
-    #define PHLCON_LBCFG1   (5)  // ...
-    #define PHLCON_LBCFG0   (4)  // ...
-    #define PHLCON_LFRQ1    (3)  // LED pulse stretch time configuration bits
-    #define PHLCON_LFRQ0    (2)  // ...
-    #define PHLCON_STRCH    (1)  // LED pulse stretching enable
+    #define PHLCON_LACFG3   (uint16_t)(1 << 11) // LED A configuration bits
+    #define PHLCON_LACFG2   (uint16_t)(1 << 10) // ...
+    #define PHLCON_LACFG1   (uint16_t)(1 << 9)  // ...
+    #define PHLCON_LACFG0   (uint16_t)(1 << 8)  // ...
+    #define PHLCON_LBCFG3   (uint16_t)(1 << 7)  // LED B configuration bits
+    #define PHLCON_LBCFG2   (uint16_t)(1 << 6)  // ...
+    #define PHLCON_LBCFG1   (uint16_t)(1 << 5)  // ...
+    #define PHLCON_LBCFG0   (uint16_t)(1 << 4)  // ...
+    #define PHLCON_LFRQ1    (uint16_t)(1 << 3)  // LED pulse stretch time configuration bits
+    #define PHLCON_LFRQ0    (uint16_t)(1 << 2)  // ...
+    #define PHLCON_STRCH    (uint16_t)(1 << 1)  // LED pulse stretching enable
 
 // ENC28J60 CONTROL REGISTERS
 // BANK 0 REGISTERS
