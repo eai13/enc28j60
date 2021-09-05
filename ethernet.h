@@ -24,7 +24,7 @@
 /**
  * @brief minor ethernet module commands
  */
-void Eth_SwitchControlRegisterBank(uint8_t bank);
+static void Eth_SwitchControlRegisterBank(uint8_t bank);
 
 uint8_t Eth_ReadControlRegister(uint8_t addr);
 uint8_t Eth_ReadBufferMemory(void);

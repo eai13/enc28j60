@@ -1,11 +1,27 @@
 #include "ethernet.h"
 
+#define RESET_BANK current_bank = 0x00
+#define MAC_ADDR {0x12, 0x12, 0x12, 0x12, 0x12, 0x12}
+static uint8_t current_bank = 0x00;
+
+static void Eth_SwitchControlRegisterBank(uint8_t bank){
+    Eth_WriteControlRegister(ECON1, (ECON1_BSEL0 | ECON1_BSEL1) & bank);
+    current_bank = bank & (ECON1_BSEL0 | ECON1_BSEL1);
+    int8_t str[32];
+    snprintf(str, 31, "ENC28J60 Bank Switch %d\r\n", current_bank);
+    print_db(str);
+}
+
 /**
  * @brief reading control register
  * @param arg control register address
  * @return register value
  */
 uint8_t Eth_ReadControlRegister(uint8_t addr){
+    uint8_t bank = ((addr >> 5) & (ECON1_BSEL0 | ECON1_BSEL1));
+    if (current_bank != bank){
+        Eth_SwitchControlRegisterBank(bank);
+    }
     uint8_t byte = ETH_OPCODE_RCR | (addr & OPCODE_CLEAR_MASK);
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&byte);
@@ -73,5 +89,6 @@ void Eth_SystemResetCommand(void){
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
     CS_DESEL;
+    RESET_BANK;
     print_db("ENC28J60 Controller Reset\r\n");
 }
