@@ -11,11 +11,20 @@
 #define CS_DESEL  HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 1) 
 #define ISMII(arg)  (arg & MII_ID)
 #define ISMAC(arg)  (arg & MAC_ID)
+
+#define ETH_SPI hspi1
+
 #define READ_ETH_SPI_BYTE(byte) HAL_SPI_Receive(&ETH_SPI, byte, 1, ETH_SPI_RECEIVE_TIMEOUT)
 #define WRITE_ETH_SPI_BYTE(byte) HAL_SPI_Transmit(&ETH_SPI, byte, 1, ETH_SPI_TRANSMIT_TIMEOUT)
 
 // ETHERNET macro TODO: change the way spi connected
-#define ETH_SPI hspi1
+
+#define ENC28J60_OK         0x00
+#define ENC28J60_TIMEOUT    0x01
+#define ENC28J60_ETHERR     0x02
+#define ENC28J60_MACERR     0x03
+#define ENC28J60_PHYERR     0x04
+#define ENC28J60_ERROR      0x09
 
 /**
  * @brief macros for ethernet

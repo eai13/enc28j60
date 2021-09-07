@@ -6,6 +6,7 @@
 #define BANK_1 (0x20)
 #define BANK_2 (0x40)
 #define BANK_3 (0x60)
+#define COMMON (0xA0)
 
 // MII ID
 #define MII_ID (0x80)
