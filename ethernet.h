@@ -7,6 +7,8 @@
 #include "spi.h"
 #include "gpio.h"
 
+#define MAC_ADDR {0x00, 0x34, 0x56, 0x78, 0x9A, 0x00}
+
 #define CS_SEL    HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 0)
 #define CS_DESEL  HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 1) 
 #define ISMII(arg)  (arg & MII_ID)
@@ -35,24 +37,35 @@
  */
 static void Eth_SwitchControlRegisterBank(uint8_t bank);
 
+// Read control register
 uint8_t Eth_ReadControlRegister(uint8_t addr);
 uint16_t Eth_ReadControlRegister_16(uint8_t addr);
 
-uint8_t Eth_ReadBufferMemory(void);
-
+// Write control register
 void Eth_WriteControlRegister(uint8_t addr, uint8_t data);
 void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data);
 
-void Eth_WriteBufferMemory(uint8_t data);
+// Read/Write buffer memory TODO: untested
+void Eth_ReadBufferMemory(uint8_t * data, uint16_t length);
+void Eth_WriteBufferMemory(uint8_t * data, uint16_t length);
+
+// Bitfield Set/Reset
 void Eth_BitFieldSet(uint8_t addr, uint8_t data);
 void Eth_BitFieldClear(uint8_t addr, uint8_t data);
+
+// Soft reset
 void Eth_SystemResetCommand(void);
 
-// PHY registers
+// PHY registers Read/Write
 uint16_t PHY_ReadRegister(uint8_t addr);
 void PHY_WriteRegister(uint8_t addr, uint16_t data);
 
+// Init function
 uint8_t ENC28J60_Init(void);
+
+// Send/Receive packet
+uint8_t Eth_SendPacket(uint8_t * data, uint8_t length);
+uint8_t Eth_ReceivePacket(uint8_t * data, uint16_t length);
 
 
 #endif

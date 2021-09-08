@@ -1,7 +1,15 @@
 #include "ethernet.h"
 
 #define RESET_BANK current_bank = 0x00
-#define MAC_ADDR {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}
+
+#define RXSIZE  0x1A00
+#define TXSIZE  0x2000 - RXSIZE
+#define MXFRAME 1500
+
+#define RXSTART 0
+#define RXEND   RXSIZE - 1
+#define TXSTART RXSIZE
+#define TXEND   RXSIZE + TXSIZE - 1
 
 // typedef enum current_bank{
 //     BANK_0 = 0x00,
@@ -11,6 +19,8 @@
 // } bank_t;
 
 uint8_t current_bank = 0x00;
+
+uint16_t rxrdpt = 0;
 
 /**
  * @brief control register bank switch
@@ -60,13 +70,15 @@ uint16_t Eth_ReadControlRegister_16(uint8_t addr){
 }
 
 // TODO: function not tested
-uint8_t Eth_ReadBufferMemory(void){
+void Eth_ReadBufferMemory(uint8_t * data, uint16_t length){
     uint8_t addr = ETH_OPCODE_RBM | 0b00011010;
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
-    READ_ETH_SPI_BYTE(&addr);
+    while(length--){
+        READ_ETH_SPI_BYTE(data);
+        data++;
+    }
     CS_DESEL;
-    return addr;
 }
 
 /**
@@ -94,11 +106,14 @@ void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data){
 }
 
 // TODO: function not tested
-void Eth_WriteBufferMemory(uint8_t data){
+void Eth_WriteBufferMemory(uint8_t * data, uint16_t length){
     uint8_t addr = ETH_OPCODE_WBM | 0b00011010;
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
-    WRITE_ETH_SPI_BYTE(&data);
+    while(length--){
+        WRITE_ETH_SPI_BYTE(data);
+        data++;
+    }
     CS_DESEL;
 }
 
@@ -179,16 +194,14 @@ uint8_t ENC28J60_Init(void){
     print_db("Ethernet Reboot Successful\r\n");
 
     // Setting up the buffer FIFO size
-    uint16_t ERX_size = 0x1000; // RX buffer size
-    uint16_t ETX_size = 0x1000; // TX buffer size
-    Eth_WriteControlRegister_16(ERXSTL, 0x0000);                    // RX buffer:
-    if (Eth_ReadControlRegister_16(ERXSTL) != 0x0000) return ENC28J60_ETHERR;
-    Eth_WriteControlRegister_16(ERXNDL, ERX_size - 1);              // 0x0000 - (ERX_size - 1)
-    if (Eth_ReadControlRegister_16(ERXNDL) != ERX_size - 1) return ENC28J60_ETHERR;
-    Eth_WriteControlRegister_16(ETXSTL, ERX_size);                  // TX buffer:
-    if (Eth_ReadControlRegister_16(ETXSTL) != ERX_size) return ENC28J60_ETHERR;
-    Eth_WriteControlRegister_16(ETXNDL, ERX_size + ETX_size - 1);   // (ERX_size) - (ERX_size + ETX_size - 1)
-    if (Eth_ReadControlRegister_16(ETXNDL) != ERX_size + ETX_size - 1) return ENC28J60_ETHERR;
+    Eth_WriteControlRegister_16(ERXSTL, RXSTART);   // RX buffer:
+    if (Eth_ReadControlRegister_16(ERXSTL) != RXSTART) return ENC28J60_ETHERR;
+    Eth_WriteControlRegister_16(ERXNDL, RXEND);     // 0x0000 - (ERX_size - 1)
+    if (Eth_ReadControlRegister_16(ERXNDL) != RXEND) return ENC28J60_ETHERR;
+    Eth_WriteControlRegister_16(ETXSTL, TXSTART);   // TX buffer:
+    if (Eth_ReadControlRegister_16(ETXSTL) != TXSTART) return ENC28J60_ETHERR;
+    Eth_WriteControlRegister_16(ETXNDL, TXEND);     // (ERX_size) - (ERX_size + ETX_size - 1)
+    if (Eth_ReadControlRegister_16(ETXNDL) != TXEND) return ENC28J60_ETHERR;
     print_db("Ethernet configuration OK\r\n");
 
     // Filters setting up
@@ -210,9 +223,8 @@ uint8_t ENC28J60_Init(void){
                                            MACON3_FRMLNEN |
                                            MACON3_FULDPX)) return ENC28J60_MACERR;
 
-    uint16_t max_frame_sz = 600;
-    Eth_WriteControlRegister_16(MAMXFLL, max_frame_sz); // Max frame size
-    if (Eth_ReadControlRegister_16(MAMXFLL) != max_frame_sz) return ENC28J60_MACERR;
+    Eth_WriteControlRegister_16(MAMXFLL, MXFRAME); // Max frame size
+    if (Eth_ReadControlRegister_16(MAMXFLL) != MXFRAME) return ENC28J60_MACERR;
     Eth_WriteControlRegister(MABBIPG, 0x15);    // Back-to-back delay
     if (Eth_ReadControlRegister(MABBIPG) != 0x15) return ENC28J60_MACERR;
     Eth_WriteControlRegister(MAIPGL, 0x12);     // Non-back-to-back delay
@@ -253,11 +265,73 @@ uint8_t ENC28J60_Init(void){
                                     PHLCON_STRCH)) return ENC28J60_PHYERR;
     print_db("PHY configuration OK\r\n");
 
+    // Frames reception enable
+    Eth_BitFieldSet(ECON1, ECON1_RXEN);
 
-
+    
 
     return ENC28J60_OK;
     // Frames reception enable
     // Eth_WriteControlRegister(ECON1, ECON1_RXEN);
 }
 
+/**
+ * @brief Packet sending
+ * @param data pointer to the array
+ * @param length array length
+ * @return uint8_t Packet transmit status
+ */
+uint8_t Eth_SendPacket(uint8_t * data, uint8_t length){
+    // Waiting for the 
+    for (int iter = 0; Eth_ReadControlRegister(ECON1) & ECON1_TXRTS; iter++){
+        // Check for errors
+        if (Eth_ReadControlRegister(EIR) & EIR_TXERIF){
+            Eth_BitFieldSet(ECON1, ECON1_TXRST);
+            Eth_BitFieldClear(ECON1, ECON1_TXRST);
+        }
+        HAL_Delay(5);
+        // Timeout call
+        if (iter > 5) return ENC28J60_TIMEOUT;
+    }
+    Eth_WriteControlRegister_16(EWRPTL, TXSTART);
+    Eth_WriteBufferMemory("\x00", 1);
+    Eth_WriteBufferMemory(data, length);
+
+    Eth_WriteControlRegister_16(ETXSTL, TXSTART);
+    Eth_WriteControlRegister_16(ETXNDL, TXSTART + length);
+
+    Eth_BitFieldSet(ECON1, ECON1_TXRST);
+
+    return ENC28J60_OK;
+}
+
+/**
+ * @brief Data reception
+ * @param data pointer to the buffer start
+ * @param length buffer size
+ * @return uint8_t amount of bytes read
+ */
+uint8_t Eth_ReceivePacket(uint8_t * data, uint16_t length){
+    uint16_t len = 0, rxlen, status, temp;
+    if (Eth_ReadControlRegister(EPKTCNT)){
+        Eth_WriteControlRegister_16(ERDPTL, rxrdpt);
+        Eth_ReadBufferMemory((void *)&rxrdpt, sizeof(rxrdpt));
+        Eth_ReadBufferMemory((void *)&rxlen, sizeof(rxlen));
+        Eth_ReadBufferMemory((void *)&status, sizeof(status)); // TODO: add vector filtering
+        uint8_t str[64];
+        snprintf(str, 63, "RXRDPT: %x RXLEN: %x STATUS: %x\r\n", rxrdpt, rxlen, status);
+        print_db(str);
+        if (status & 0x80){
+            len = rxlen - 4;
+            if (len > length) len = length;
+            Eth_ReadBufferMemory(data, len);
+        }
+
+        temp = (rxrdpt - 1) & RXEND;
+        Eth_WriteControlRegister_16(ERXRDPTL, temp);
+
+        Eth_BitFieldSet(ECON2, ECON2_PKTDEC);
+    }
+    return len;
+}
+    
