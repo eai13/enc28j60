@@ -5,7 +5,7 @@
 #include "stdint.h"
 
 #define inv_16bit(word) ((((word) >> 8) & 0xFF) | \
-                         (((word) << 8) & 0xFF))
+                         (((word) << 8) & 0xFF00))
 
 #define inv_32bit(word) ((((word) << 24) & 0xFF000000) | \
                          (((word) << 8) & 0xFF0000) | \
@@ -44,9 +44,10 @@ typedef struct ARP_packet{
 uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
 
 #pragma pack(push, 1)
+// BUG: fix the bit fields
 typedef struct IP_packet{
-    uint8_t     VERSION     : 4;    // Protocol version
-    uint8_t     IHL         : 4;    // Header size
+    uint8_t     IHL         : 4;    // Protocol version
+    uint8_t     VERSION     : 4;    // Header size
     uint8_t     DSCP        : 5;    // Differentiated services code point
     uint8_t     ECN         : 3;    // Explicit congestion notification
     uint16_t    PACK_LEN    : 16;   // Packet length

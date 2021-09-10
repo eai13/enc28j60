@@ -22,6 +22,8 @@ uint8_t current_bank = 0x00;
 
 uint16_t rxrdpt = 0;
 
+uint8_t str[64];
+
 /**
  * @brief control register bank switch
  * @param bank bank number
@@ -75,8 +77,7 @@ void Eth_ReadBufferMemory(uint8_t * data, uint16_t length){
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
     while(length--){
-        READ_ETH_SPI_BYTE(data);
-        data++;
+        READ_ETH_SPI_BYTE(data++);
     }
     CS_DESEL;
 }
@@ -111,8 +112,7 @@ void Eth_WriteBufferMemory(uint8_t * data, uint16_t length){
     CS_SEL;
     WRITE_ETH_SPI_BYTE(&addr);
     while(length--){
-        WRITE_ETH_SPI_BYTE(data);
-        data++;
+        WRITE_ETH_SPI_BYTE(data++);
     }
     CS_DESEL;
 }
@@ -191,6 +191,7 @@ uint8_t ENC28J60_Init(void){
     while(Eth_ReadControlRegister(ESTAT) & ESTAT_CLKRDY != ESTAT_CLKRDY){
         if (HAL_GetTick() - timeout_ticks > 5000) return ENC28J60_TIMEOUT;
     }
+    // DEBUG:
     print_db("Ethernet Reboot Successful\r\n");
 
     // Setting up the buffer FIFO size
@@ -202,6 +203,7 @@ uint8_t ENC28J60_Init(void){
     if (Eth_ReadControlRegister_16(ETXSTL) != TXSTART) return ENC28J60_ETHERR;
     Eth_WriteControlRegister_16(ETXNDL, TXEND);     // (ERX_size) - (ERX_size + ETX_size - 1)
     if (Eth_ReadControlRegister_16(ETXNDL) != TXEND) return ENC28J60_ETHERR;
+    // DEBUG:
     print_db("Ethernet configuration OK\r\n");
 
     // Filters setting up
@@ -210,10 +212,12 @@ uint8_t ENC28J60_Init(void){
     // MAC setting up
     Eth_WriteControlRegister(MACON1, (MACON1_MARXEN |
                                      MACON1_RXPAUS |
-                                     MACON1_TXPAUS));
+                                     MACON1_TXPAUS |
+                                     MACON1_PASSALL));
     if (Eth_ReadControlRegister(MACON1) != (MACON1_MARXEN |
                                             MACON1_RXPAUS |
-                                            MACON1_TXPAUS)) return ENC28J60_MACERR;
+                                            MACON1_TXPAUS |
+                                            MACON1_PASSALL)) return ENC28J60_MACERR;
     Eth_WriteControlRegister(MACON3, MACON3_PADCFG0 |
                                      MACON3_TXCRCEN |
                                      MACON3_FRMLNEN |
@@ -231,16 +235,18 @@ uint8_t ENC28J60_Init(void){
     if (Eth_ReadControlRegister(MAIPGL) != 0x12) return ENC28J60_MACERR;
     Eth_WriteControlRegister(MAIPGH, 0x0C);
     if (Eth_ReadControlRegister(MAIPGH) != 0x0C) return ENC28J60_MACERR;
+    // DEBUG:
     print_db("MAC configuration OK\r\n");
 
     // MAC address setting up
     uint8_t mac_ad[] = MAC_ADDR;
-    Eth_WriteControlRegister(MAADR6, mac_ad[0]);
-    Eth_WriteControlRegister(MAADR5, mac_ad[1]);
-    Eth_WriteControlRegister(MAADR4, mac_ad[2]);
-    Eth_WriteControlRegister(MAADR3, mac_ad[3]);
-    Eth_WriteControlRegister(MAADR2, mac_ad[4]);
-    Eth_WriteControlRegister(MAADR1, mac_ad[5]);
+    Eth_WriteControlRegister(MAADR6, mac_ad[5]);
+    Eth_WriteControlRegister(MAADR5, mac_ad[4]);
+    Eth_WriteControlRegister(MAADR4, mac_ad[3]);
+    Eth_WriteControlRegister(MAADR3, mac_ad[2]);
+    Eth_WriteControlRegister(MAADR2, mac_ad[1]);
+    Eth_WriteControlRegister(MAADR1, mac_ad[0]);
+    // DEBUG:
     uint8_t str[64];
     snprintf(str, 63, "MAC address: %2x:%2x:%2x:%2x:%2x:%2x\r\n", Eth_ReadControlRegister(MAADR6), 
                                                                   Eth_ReadControlRegister(MAADR5),
@@ -263,16 +269,13 @@ uint8_t ENC28J60_Init(void){
                                     PHLCON_LBCFG2 | PHLCON_LBCFG1 | PHLCON_LBCFG0 |
                                     PHLCON_LFRQ0 |
                                     PHLCON_STRCH)) return ENC28J60_PHYERR;
+    // DEBUG:
     print_db("PHY configuration OK\r\n");
 
     // Frames reception enable
     Eth_BitFieldSet(ECON1, ECON1_RXEN);
 
-    
-
     return ENC28J60_OK;
-    // Frames reception enable
-    // Eth_WriteControlRegister(ECON1, ECON1_RXEN);
 }
 
 /**
@@ -281,8 +284,8 @@ uint8_t ENC28J60_Init(void){
  * @param length array length
  * @return uint8_t Packet transmit status
  */
-uint8_t Eth_SendPacket(uint8_t * data, uint8_t length){
-    // Waiting for the 
+uint16_t Eth_SendPacket(uint8_t * data, uint8_t length){
+    // Waiting for the transmitter to be ready
     for (int iter = 0; Eth_ReadControlRegister(ECON1) & ECON1_TXRTS; iter++){
         // Check for errors
         if (Eth_ReadControlRegister(EIR) & EIR_TXERIF){
@@ -290,17 +293,20 @@ uint8_t Eth_SendPacket(uint8_t * data, uint8_t length){
             Eth_BitFieldClear(ECON1, ECON1_TXRST);
         }
         HAL_Delay(5);
+        print_db("Transmitter not ready\r\n"); // FIXME: remove debug
         // Timeout call
         if (iter > 5) return ENC28J60_TIMEOUT;
     }
+    // DEBUG:
+    print_db("Packet Send\r\n");
     Eth_WriteControlRegister_16(EWRPTL, TXSTART);
-    Eth_WriteBufferMemory("\x00", 1);
+    Eth_WriteBufferMemory((uint8_t *)"\x00", 1);
     Eth_WriteBufferMemory(data, length);
 
     Eth_WriteControlRegister_16(ETXSTL, TXSTART);
     Eth_WriteControlRegister_16(ETXNDL, TXSTART + length);
 
-    Eth_BitFieldSet(ECON1, ECON1_TXRST);
+    Eth_BitFieldSet(ECON1, ECON1_TXRTS);
 
     return ENC28J60_OK;
 }
@@ -311,15 +317,19 @@ uint8_t Eth_SendPacket(uint8_t * data, uint8_t length){
  * @param length buffer size
  * @return uint8_t amount of bytes read
  */
-uint8_t Eth_ReceivePacket(uint8_t * data, uint16_t length){
+uint16_t Eth_ReceivePacket(uint8_t * data, uint16_t length){
     uint16_t len = 0, rxlen, status, temp;
+    // DEBUG:
+    // snprintf(str, 63, "EPKTCNT: %d\r\n", Eth_ReadControlRegister(EPKTCNT));
+    // print_db(str);
+    
     if (Eth_ReadControlRegister(EPKTCNT)){
         Eth_WriteControlRegister_16(ERDPTL, rxrdpt);
         Eth_ReadBufferMemory((void *)&rxrdpt, sizeof(rxrdpt));
         Eth_ReadBufferMemory((void *)&rxlen, sizeof(rxlen));
         Eth_ReadBufferMemory((void *)&status, sizeof(status)); // TODO: add vector filtering
-        uint8_t str[64];
-        snprintf(str, 63, "RXRDPT: %x RXLEN: %x STATUS: %x\r\n", rxrdpt, rxlen, status);
+        // DEBUG:
+        snprintf(str, 63, "RXRDPT: %x RXLEN: %d STATUS: %x\r\n", rxrdpt, rxlen, status);
         print_db(str);
         if (status & 0x80){
             len = rxlen - 4;
@@ -327,7 +337,7 @@ uint8_t Eth_ReceivePacket(uint8_t * data, uint16_t length){
             Eth_ReadBufferMemory(data, len);
         }
 
-        temp = (rxrdpt - 1) & RXEND;
+        temp = ((rxrdpt - 1) & RXEND);
         Eth_WriteControlRegister_16(ERXRDPTL, temp);
 
         Eth_BitFieldSet(ECON2, ECON2_PKTDEC);

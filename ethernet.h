@@ -7,19 +7,19 @@
 #include "spi.h"
 #include "gpio.h"
 
-#define MAC_ADDR {0x00, 0x34, 0x56, 0x78, 0x9A, 0x00}
+#define MAC_ADDR {0xa5, 0x11, 0x83, 0x91, 0x42, 0x25}
 
 #define CS_SEL    HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 0)
 #define CS_DESEL  HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 1) 
 #define ISMII(arg)  (arg & MII_ID)
 #define ISMAC(arg)  (arg & MAC_ID)
 
+// ETHERNET macro FIXME: change the way spi connected
 #define ETH_SPI hspi1
 
 #define READ_ETH_SPI_BYTE(byte) HAL_SPI_Receive(&ETH_SPI, byte, 1, ETH_SPI_RECEIVE_TIMEOUT)
 #define WRITE_ETH_SPI_BYTE(byte) HAL_SPI_Transmit(&ETH_SPI, byte, 1, ETH_SPI_TRANSMIT_TIMEOUT)
 
-// ETHERNET macro TODO: change the way spi connected
 
 #define ENC28J60_OK         0x00
 #define ENC28J60_TIMEOUT    0x01
@@ -45,7 +45,7 @@ uint16_t Eth_ReadControlRegister_16(uint8_t addr);
 void Eth_WriteControlRegister(uint8_t addr, uint8_t data);
 void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data);
 
-// Read/Write buffer memory TODO: untested
+// Write and read buffer
 void Eth_ReadBufferMemory(uint8_t * data, uint16_t length);
 void Eth_WriteBufferMemory(uint8_t * data, uint16_t length);
 
@@ -64,8 +64,8 @@ void PHY_WriteRegister(uint8_t addr, uint16_t data);
 uint8_t ENC28J60_Init(void);
 
 // Send/Receive packet
-uint8_t Eth_SendPacket(uint8_t * data, uint8_t length);
-uint8_t Eth_ReceivePacket(uint8_t * data, uint16_t length);
+uint16_t Eth_SendPacket(uint8_t * data, uint8_t length);
+uint16_t Eth_ReceivePacket(uint8_t * data, uint16_t length);
 
 
 #endif
