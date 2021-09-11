@@ -23,8 +23,8 @@
 #define ETH_OPCODE_SRC      0b11100000
 #define OPCODE_CLEAR_MASK   0b00011111
 
-#define ETH_SPI_TRANSMIT_TIMEOUT    100
-#define ETH_SPI_RECEIVE_TIMEOUT     100
+#define ETH_SPI_TRANSMIT_TIMEOUT    1000
+#define ETH_SPI_RECEIVE_TIMEOUT     1000
 
 // ENC28J60 PHY Registers
 #define PHCON1      (0x00)  // PHY control register 1

@@ -4,6 +4,14 @@
 #include "ethernet.h"
 #include "stdint.h"
 
+#define FRAME_ERROR    0x01
+#define FRAME_OK       0x00
+
+#define IP_PACKET_STRUCT_SIZE   20
+#define ARP_PACKET_STRUCT_SIZE  20
+#define ETH_PACKET_STRUCT_SIZE  14
+#define ICMP_PACKET_STRUCT_SIZE 8 
+
 #define inv_16bit(word) ((((word) >> 8) & 0xFF) | \
                          (((word) << 8) & 0xFF00))
 
@@ -15,6 +23,8 @@
 #define ip_set(ip0, ip1, ip2, ip3) (((uint32_t)(ip0)) | ((uint32_t)(ip1 << 8)) | \
                                     ((uint32_t)(ip2 << 16)) | ((uint32_t)(ip3 << 24)))
 
+
+// Ethernet frame structure
 #pragma pack(push, 1)
 typedef struct ethernet_packet{
     uint8_t     THA[6];         // Target MAC
@@ -25,7 +35,7 @@ typedef struct ethernet_packet{
 #pragma pack(pop)
 
 uint8_t Ethernet_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
-uint8_t Ethernet_Reply(ethernet_packet_t * eth_pack, uint16_t length);
+static inline uint8_t Ethernet_Reply(ethernet_packet_t * eth_pack, uint16_t length);
 
 #pragma pack(push, 1)
 typedef struct ARP_packet{
@@ -41,19 +51,19 @@ typedef struct ARP_packet{
 } ARP_packet_t;
 #pragma pack(pop)
 
-uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
+static inline uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
 
 #pragma pack(push, 1)
-// BUG: fix the bit fields
+// BUG: fix the bit fields (fixed, not tested)
 typedef struct IP_packet{
     uint8_t     IHL         : 4;    // Protocol version
     uint8_t     VERSION     : 4;    // Header size
-    uint8_t     DSCP        : 5;    // Differentiated services code point
     uint8_t     ECN         : 3;    // Explicit congestion notification
+    uint8_t     DSCP        : 5;    // Differentiated services code point
     uint16_t    PACK_LEN    : 16;   // Packet length
     uint16_t    FRAG_ID     : 16;   // Packet fragments identification
-    uint16_t    CONT_FLAGS  : 3;    // Fragmentation controls flags
     uint16_t    FRAG_OFFSET : 13;   // Fragment offset
+    uint16_t    CONT_FLAGS  : 3;    // Fragmentation controls flags
     uint8_t     TTL         : 8;    // Time to live
     uint8_t     PROTOCOL    : 8;    // Contents protocol type
     uint16_t    CSUM        : 16;   // Header CRC
@@ -63,9 +73,9 @@ typedef struct IP_packet{
 } IP_packet_t;
 #pragma pack(pop)
 
-uint8_t     IP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
-uint8_t     IP_Reply(ethernet_packet_t * eth_pack, uint16_t length);
-uint16_t    IP_CSum(uint32_t sum, uint8_t * buf, size_t length);
+static inline uint8_t  IP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
+static inline uint8_t  IP_Reply(ethernet_packet_t * eth_pack, uint16_t length);
+static inline uint16_t IP_CSum(uint8_t * buf, size_t length);
 
 #pragma pack(push, 1)
 typedef struct ICMP_packet{
@@ -78,7 +88,7 @@ typedef struct ICMP_packet{
 } ICMP_packet_t;
 #pragma pack(pop)
 
-uint8_t ICMP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
+static inline uint8_t ICMP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
 
 #pragma pack(push, 1)
 typedef struct UDP_packet{
