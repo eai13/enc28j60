@@ -64,7 +64,16 @@ static inline uint8_t Eth_ReadControlRegister(uint8_t addr){
  * @return data
  */
 static inline uint16_t Eth_ReadControlRegister_16(uint8_t addr){
-    return (Eth_ReadControlRegister(addr) | ((uint16_t)Eth_ReadControlRegister(addr + 1) << 8));
+    Eth_SwitchControlRegisterBank(addr);
+    uint8_t byte[2] = { (ETH_OPCODE_RCR | (addr & OPCODE_CLEAR_MASK)),
+                        (ETH_OPCODE_RCR | ((addr + 1) & OPCODE_CLEAR_MASK)) };
+    CS_SEL;
+    WRITE_ETH_SPI_BYTE(byte);
+    READ_ETH_SPI_BYTE(byte);
+    WRITE_ETH_SPI_BYTE(byte + 1);
+    READ_ETH_SPI_BYTE(byte + 1);
+    CS_DESEL;
+    return (byte[0] | ((uint16_t)byte[1] << 8));
 }
 
 /**
@@ -103,11 +112,11 @@ static inline void Eth_WriteBufferMemory(uint8_t * data, uint16_t length){
  * @param data data to write to the register
  */
 static inline void Eth_WriteControlRegister(uint8_t addr, uint8_t data){
+    uint8_t dat[2] = { (ETH_OPCODE_WCR | (addr & OPCODE_CLEAR_MASK)), 
+                       data };
     Eth_SwitchControlRegisterBank(addr);
-    addr = ETH_OPCODE_WCR | (addr & OPCODE_CLEAR_MASK);
     CS_SEL;
-    WRITE_ETH_SPI_BYTE(&addr);
-    WRITE_ETH_SPI_BYTE(&data);
+    WRITE_ETH_SPI_2BYTE(dat);
     CS_DESEL;
 }
 
@@ -150,11 +159,11 @@ static inline void Eth_BitFieldSet(uint8_t addr, uint8_t data){
  * @param data bits to reset
  */
 static inline void Eth_BitFieldClear(uint8_t addr, uint8_t data){
+    uint8_t dat[2] = { (ETH_OPCODE_BFC | (addr & OPCODE_CLEAR_MASK)),
+                       data };
     Eth_SwitchControlRegisterBank(addr);
-    addr = ETH_OPCODE_BFC | (addr & OPCODE_CLEAR_MASK);
     CS_SEL;
-    WRITE_ETH_SPI_BYTE(&addr);
-    WRITE_ETH_SPI_BYTE(&data);
+    WRITE_ETH_SPI_2BYTE(dat);
     CS_DESEL;
 }
 
