@@ -22,10 +22,6 @@ uint8_t current_bank = 0x00;
 
 uint16_t rxrdpt = 0;
 
-/**
- * @brief control register bank switch
- * @param bank bank number
- */
 static inline void Eth_SwitchControlRegisterBank(uint8_t address){
     uint8_t bank = (address >> 5) & (ECON1_BSEL1 | ECON1_BSEL0);
     if ((current_bank != bank) && ((address & OPCODE_CLEAR_MASK) < 0x1B)){
@@ -43,11 +39,6 @@ static inline void Eth_SwitchControlRegisterBank(uint8_t address){
     }
 }
 
-/**
- * @brief reading control register
- * @param arg control register address
- * @return register value
- */
 static inline uint8_t Eth_ReadControlRegister(uint8_t addr){
     Eth_SwitchControlRegisterBank(addr);
     uint8_t byte = ETH_OPCODE_RCR | (addr & OPCODE_CLEAR_MASK);
@@ -58,11 +49,6 @@ static inline uint8_t Eth_ReadControlRegister(uint8_t addr){
     return byte;
 }
 
-/**
- * @brief read coupled register function
- * @param addr register address
- * @return data
- */
 static inline uint16_t Eth_ReadControlRegister_16(uint8_t addr){
     Eth_SwitchControlRegisterBank(addr);
     uint8_t byte[2] = { (ETH_OPCODE_RCR | (addr & OPCODE_CLEAR_MASK)),
@@ -76,11 +62,6 @@ static inline uint16_t Eth_ReadControlRegister_16(uint8_t addr){
     return (byte[0] | ((uint16_t)byte[1] << 8));
 }
 
-/**
- * @brief ENC28J60 buffer memory read
- * @param data where to read
- * @param length size
- */
 static inline void Eth_ReadBufferMemory(uint8_t * data, uint16_t length){
     uint8_t addr = ETH_OPCODE_RBM | 0b00011010;
     CS_SEL;
@@ -91,11 +72,6 @@ static inline void Eth_ReadBufferMemory(uint8_t * data, uint16_t length){
     CS_DESEL;
 }
 
-/**
- * @brief ENC28J60 buffer memory write
- * @param data what to write
- * @param length size
- */
 static inline void Eth_WriteBufferMemory(uint8_t * data, uint16_t length){
     uint8_t addr = ETH_OPCODE_WBM | 0b00011010;
     CS_SEL;
@@ -106,11 +82,6 @@ static inline void Eth_WriteBufferMemory(uint8_t * data, uint16_t length){
     CS_DESEL;
 }
 
-/**
- * @brief writing control register
- * @param arg control register address
- * @param data data to write to the register
- */
 static inline void Eth_WriteControlRegister(uint8_t addr, uint8_t data){
     uint8_t dat[2] = { (ETH_OPCODE_WCR | (addr & OPCODE_CLEAR_MASK)), 
                        data };
@@ -120,11 +91,6 @@ static inline void Eth_WriteControlRegister(uint8_t addr, uint8_t data){
     CS_DESEL;
 }
 
-/**
- * @brief writing coupled control register
- * @param addr control register address
- * @param data data to write
- */
 static inline void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data){
     Eth_SwitchControlRegisterBank(addr);
     uint8_t dat[2] = { (ETH_OPCODE_WCR | (addr & OPCODE_CLEAR_MASK)),
@@ -139,11 +105,6 @@ static inline void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data){
     CS_DESEL;
 }
 
-/**
- * @brief Bit field set function (addr |= data)
- * @param addr register address
- * @param data bits to set
- */
 static inline void Eth_BitFieldSet(uint8_t addr, uint8_t data){
     uint8_t dat[2] = { (ETH_OPCODE_BFS | (addr & OPCODE_CLEAR_MASK)),
                        data };
@@ -153,11 +114,6 @@ static inline void Eth_BitFieldSet(uint8_t addr, uint8_t data){
     CS_DESEL;
 }
 
-/**
- * @brief Bit field reset function (addr &= ~data)
- * @param addr register address
- * @param data bits to reset
- */
 static inline void Eth_BitFieldClear(uint8_t addr, uint8_t data){
     uint8_t dat[2] = { (ETH_OPCODE_BFC | (addr & OPCODE_CLEAR_MASK)),
                        data };
@@ -167,9 +123,6 @@ static inline void Eth_BitFieldClear(uint8_t addr, uint8_t data){
     CS_DESEL;
 }
 
-/**
- * @brief Soft reset implementation
- */
 static inline void Eth_SystemResetCommand(void){
     CS_DESEL;
     uint8_t addr = ETH_OPCODE_SRC | 0x1F;
@@ -181,11 +134,6 @@ static inline void Eth_SystemResetCommand(void){
     Eth_BitFieldClear(MICMD, MICMD_MIIRD); // Resetting the bit (dont know for what)
 }
 
-/**
- * @brief PHY register reading
- * @param addr PHY register address
- * @return PHY register data
- */
 static inline uint16_t PHY_ReadRegister(uint8_t addr){
     Eth_WriteControlRegister(MIREGADR, addr);
     Eth_BitFieldSet(MICMD, MICMD_MIIRD);
@@ -194,11 +142,6 @@ static inline uint16_t PHY_ReadRegister(uint8_t addr){
     return Eth_ReadControlRegister_16(MIRDL);
 }
 
-/**
- * @brief PHY register writing
- * @param addr PHY register address
- * @param data data to write
- */
 static inline void PHY_WriteRegister(uint8_t addr, uint16_t data){
     Eth_WriteControlRegister(MIREGADR, addr);
     Eth_WriteControlRegister(MIWRL, (uint8_t)data);
@@ -324,12 +267,6 @@ uint8_t ENC28J60_Init(void){
     return ENC28J60_OK;
 }
 
-/**
- * @brief Packet sending
- * @param data pointer to the array
- * @param length array length
- * @return uint8_t Packet transmit status
- */
 uint16_t Eth_SendPacket(uint8_t * data, uint8_t length){
     // Waiting for the transmitter to be ready
     for (int iter = 0; Eth_ReadControlRegister(ECON1) & ECON1_TXRTS; iter++){
@@ -359,12 +296,6 @@ uint16_t Eth_SendPacket(uint8_t * data, uint8_t length){
     return ENC28J60_OK;
 }
 
-/**
- * @brief Data reception
- * @param data pointer to the buffer start
- * @param length buffer size
- * @return uint8_t amount of bytes read
- */
 uint16_t Eth_ReceivePacket(uint8_t * data, uint16_t length){
     uint16_t len = 0, rxlen, status, temp;
     

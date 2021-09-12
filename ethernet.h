@@ -1,7 +1,7 @@
 #ifndef ETHERNET_ENC28J60
 #define ETHERNET_ENC28J60
 
-#include "stdint.h"
+#include <stdint.h>
 #include "ethernet_regs.h"
 #include "debug.h"
 #include "spi.h"
@@ -10,6 +10,7 @@
 #define DELAY(ms) HAL_Delay(ms)
 
 #define MAC_ADDR {0xa5, 0x11, 0x83, 0x91, 0x42, 0x25}
+#define BROADCAST_MAC {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 
 #define CS_SEL    HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 0)
 #define CS_DESEL  HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, 1) 
@@ -34,41 +35,68 @@
 #define ENC28J60_ERROR      0x09
 
 /**
- * @brief macros for ethernet
- */
-
-/**
- * @brief minor ethernet module commands
+ * @brief ENC28J60 Switch control register bank
  */
 static inline void Eth_SwitchControlRegisterBank(uint8_t bank);
 
-// Read control register
+/**
+ * @brief read ENC28J60 control registers (for 8/16 bit data)
+ * @param addr register address
+ * @return register value
+ */
 static inline uint8_t Eth_ReadControlRegister(uint8_t addr);
 static inline uint16_t Eth_ReadControlRegister_16(uint8_t addr);
 
-// Write control register
+/**
+ * @brief write ENC28J60 control registers (for 8/16 bit data)
+ * @param addr register address
+ * @param data data to write
+ */
 static inline void Eth_WriteControlRegister(uint8_t addr, uint8_t data);
 static inline void Eth_WriteControlRegister_16(uint8_t addr, uint16_t data);
 
-// Write and read buffer
+/**
+ * @brief write and read ENC28J60 buffer data
+ * @param data pointer to the controller buffer
+ * @param length data amount for read/write
+ */
 static inline void Eth_ReadBufferMemory(uint8_t * data, uint16_t length);
 static inline void Eth_WriteBufferMemory(uint8_t * data, uint16_t length);
 
-// Bitfield Set/Reset
+/**
+ * @brief ENC28J60 register bits set-reset 
+ * @param addr register address
+ * @param data bits to set/reset
+ */
 static inline void Eth_BitFieldSet(uint8_t addr, uint8_t data);
 static inline void Eth_BitFieldClear(uint8_t addr, uint8_t data);
 
-// Soft reset
+/**
+ * @brief soft ENC28J60 reset
+ */
 static inline void Eth_SystemResetCommand(void);
 
-// PHY registers Read/Write
+/**
+ * @brief ENC28J60 PHY registers read/write
+ * @param addr register address
+ * @param data data to write
+ * @return data from the register
+ */
 static inline uint16_t PHY_ReadRegister(uint8_t addr);
 static inline void PHY_WriteRegister(uint8_t addr, uint16_t data);
 
-// Init function
+/**
+ * @brief ENC28J60 initilization
+ * @return init status
+ */
 uint8_t ENC28J60_Init(void);
 
-// Send/Receive packet
+/**
+ * @brief packets send/receive
+ * @param data pointer to send/receive data
+ * @param length data amount
+ * @return status/bytes received
+ */
 uint16_t Eth_SendPacket(uint8_t * data, uint8_t length);
 uint16_t Eth_ReceivePacket(uint8_t * data, uint16_t length);
 
