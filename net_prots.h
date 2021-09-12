@@ -41,8 +41,8 @@ typedef struct ethernet_packet{
 } ethernet_packet_t;
 #pragma pack(pop)
 
-uint8_t Ethernet_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
-uint8_t Ethernet_Reply(ethernet_packet_t * eth_pack, uint16_t length);
+void Ethernet_PacketProc(ethernet_packet_t * eth_pack, uint16_t length, uint8_t * msg, uint16_t msg_size);
+void Ethernet_Reply(ethernet_packet_t * eth_pack, uint16_t length);
 
 
 
@@ -88,7 +88,7 @@ typedef struct ARP_MAC_IP_couple{
 ARP_MAC_IP_couple_t ARP_cache[ARP_CACHE_SIZE];
 
 uint8_t * ARP_MACSearch(uint32_t source_ip);
-uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
+void ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
 uint8_t * ARP_MACResolver(uint32_t source_ip);
 
 
@@ -99,9 +99,24 @@ uint8_t * ARP_MACResolver(uint32_t source_ip);
  */
 #define IP_PACKET_STRUCT_SIZE   20
 
-#define IP_PROTOCOL_ICMP    0x01
-#define IP_PROTOCOL_TCP     0x06
-#define IP_PROTOCOL_UDP     0x11
+#define IP_PROTOCOL_ICMP            0x01
+#define IP_PROTOCOL_TCP             0x06
+#define IP_PROTOCOL_UDP             0x11
+
+#define IP_IHL_DEFAULT              0x5
+
+#define IP_VERSION_DEFAULT          0x4
+
+#define IP_ECN_DEFAULT              0x00
+
+#define IP_DSCP_DEFAULT             0x00
+
+#define IP_FRAG_OFFST1_DEFAULT      0x00
+#define IP_FRAG_OFFST2_DEFAULT      0x00
+
+#define IP_FLAGS_NO_FRAGMENT        0x2
+
+#define IP_TTL_64                   0x40
 
 #pragma pack(push, 1)
 // BUG: fix the bit fields (fixed, not tested)
@@ -112,8 +127,9 @@ typedef struct IP_packet{
     uint8_t     DSCP        : 4;    // Something else
     uint16_t    PACK_LEN    : 16;   // Packet length
     uint16_t    FRAG_ID     : 16;   // Packet fragments identification
-    uint16_t    FRAG_OFFSET : 13;   // Fragment offset
+    uint16_t    FRAG_OFFST1 : 5;    // Fragment offset 1
     uint16_t    FLAGS       : 3;    // Flags
+    uint16_t    FRAG_OFFST2 : 8;    // Fragment offset 2
     uint8_t     TTL         : 8;    // Time to live
     uint8_t     PROTOCOL    : 8;    // Contents protocol type
     uint16_t    CSUM        : 16;   // Header CRC
@@ -123,9 +139,9 @@ typedef struct IP_packet{
 } IP_packet_t;
 #pragma pack(pop)
 
-uint8_t  IP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
-uint8_t  IP_Reply(ethernet_packet_t * eth_pack, uint16_t length);
-uint16_t IP_CSum(uint8_t * buf, size_t length);
+void     IP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length, uint8_t * msg, uint16_t msg_size);
+void     IP_Reply(ethernet_packet_t * eth_pack, uint16_t length);
+uint16_t IP_CSum(uint32_t sum, uint8_t * buf, size_t length);
 
 
 
@@ -145,9 +161,9 @@ typedef struct UDP_packet{
 } UDP_packet_t;
 #pragma pack(pop)
 
-uint8_t UDP_PacketProc(IP_packet_t * ip_pack, uint16_t length);
-uint8_t UDP_Reply(UDP_packet_t * udp_pack, uint16_t length);
-uint8_t UDP_PacketSend(uint32_t targ_ip, uint16_t targ_port, uint8_t * data, uint16_t length);
+void UDP_PacketProc(IP_packet_t * ip_pack, uint16_t length, uint8_t * msg, uint16_t msg_size);
+void UDP_Reply(UDP_packet_t * udp_pack, uint16_t length);
+void UDP_PacketSend(uint32_t targ_ip, uint16_t targ_port, uint8_t * msg, uint16_t msg_size);
 
 
 
@@ -171,6 +187,6 @@ typedef struct ICMP_packet{
 } ICMP_packet_t;
 #pragma pack(pop)
 
-uint8_t ICMP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
+void ICMP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length);
 
 #endif

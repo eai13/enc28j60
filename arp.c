@@ -17,7 +17,7 @@ uint8_t * ARP_MACSearch(uint32_t source_ip){
     return NULL;
 }
 
-inline uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
+void ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
     // Getting the ARP package
     ARP_packet_t * arp_pack = (void *)(eth_pack->Payload);
     // Checking the packet
@@ -25,8 +25,10 @@ inline uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
         (arp_pack->HTYPE != ARP_HTYPE_ETHERNET) |
         (arp_pack->PTYPE != ARP_PTYPE_IPv4) |
         (arp_pack->TPA != LOCAL_IP)){
+#ifdef ETHERNET_DEBUG
         print_er("ARP frame error\r\n");
-        return FRAME_ERROR;
+        return;
+#endif
     }
     // For sending ARP response
     if (arp_pack->OPER == ARP_OPER_REQUEST){
@@ -35,7 +37,7 @@ inline uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
         arp_pack->SPA = LOCAL_IP;
         memcpy(arp_pack->THA, arp_pack->SHA, 6);
         memcpy(arp_pack->SHA, mac_addr, 6);
-        return Ethernet_Reply(eth_pack, ARP_PACKET_STRUCT_SIZE);
+        Ethernet_Reply(eth_pack, ARP_PACKET_STRUCT_SIZE);
     }
     // For sending ARP request
     else if (arp_pack->OPER == ARP_OPER_RESPONSE){
@@ -43,12 +45,15 @@ inline uint8_t ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
             ARP_cache[arp_cache_pointer].IP = arp_pack->SPA;
             memcpy(ARP_cache[arp_cache_pointer].MAC, arp_pack->SHA, 6);
             ARP_CACHE_POINTER_INCREMENT;
+#ifdef ETHERNET_DEBUG
             print_in("NEW MAC in collection\r\n");
+#endif
         }
     }
     else{
+#ifdef ETHERNET_DEBUG
         print_er("Unknown ARP operation type\r\n");
-        return FRAME_ERROR;
+#endif
     }
 }
 
