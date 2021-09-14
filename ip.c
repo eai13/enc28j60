@@ -62,7 +62,10 @@ void IP_Reply(ethernet_packet_t * eth_pack, uint16_t length){
  * @return uint16_t 
  */
 uint16_t IP_CSum(uint32_t sum, uint8_t * buf, size_t length){
+    // uint8_t str[63];
     while(length >= 2){
+        // snprintf(str, 63, "%x\r\n", ((uint16_t)*buf << 8) | *(buf + 1));
+        // print_in(str);
         sum += ((uint16_t)*buf << 8) | *(buf + 1);
         buf += 2;
         length -= 2;

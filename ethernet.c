@@ -207,9 +207,9 @@ uint8_t ENC28J60_Init(void){
                                             MACON1_TXPAUS |
                                             MACON1_PASSALL)) print_wr("MAC register corrupted: MACON1\r\n");
     if (Eth_ReadControlRegister(MACON3) != (MACON3_PADCFG0 |
-                                           MACON3_TXCRCEN |
-                                           MACON3_FRMLNEN |
-                                           MACON3_FULDPX)) print_wr("MAC register corrupted: MACON3\r\n");
+                                            MACON3_TXCRCEN |
+                                            MACON3_FRMLNEN |
+                                            MACON3_FULDPX)) print_wr("MAC register corrupted: MACON3\r\n");
     if (Eth_ReadControlRegister_16(MAMXFLL) != MXFRAME) print_wr("MAC register corrupted: MAMXFL\r\n");
     if (Eth_ReadControlRegister(MABBIPG) != 0x15) print_wr("MAC register corrupted: MABBIPG\r\n");
     if (Eth_ReadControlRegister(MAIPGL) != 0x12) print_wr("MAC register corrupted: MAIPGL\r\n");

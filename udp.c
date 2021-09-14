@@ -23,7 +23,7 @@ void UDP_PacketSend(uint32_t targ_ip, uint16_t targ_port, uint8_t * msg, uint16_
     
     uint8_t * search_mac;
     uint16_t len;
-    if ((search_mac = ARP_MACResolver(targ_ip)) == 0){
+    if ((search_mac = ARP_MACResolver(targ_ip)) == NULL){
         while((len = Eth_ReceivePacket(network_buffer, sizeof(network_buffer))) != 0){
             Ethernet_PacketProc((void *)(network_buffer), len, NULL, 0);
         }
@@ -46,15 +46,16 @@ void UDP_PacketSend(uint32_t targ_ip, uint16_t targ_port, uint8_t * msg, uint16_
     ip_pack->FLAGS =        IP_FLAGS_NO_FRAGMENT;
     ip_pack->TTL =          IP_TTL_64;
     ip_pack->PROTOCOL =     IP_PROTOCOL_UDP;
-    ip_pack->CSUM =         IP_CSum(0, (void *)(ip_pack), IP_PACKET_STRUCT_SIZE);
     ip_pack->SPA =          LOCAL_IP;
     ip_pack->TPA =          targ_ip;
+    ip_pack->CSUM =         0;
+    ip_pack->CSUM =         IP_CSum(0, (void *)(ip_pack), IP_PACKET_STRUCT_SIZE);
 
     // UDP preparing
-    udp_pack->SP =          inv_16bit(5555);
+    udp_pack->SP =          inv_16bit(49002);
     udp_pack->TP =          inv_16bit(targ_port);
     udp_pack->LENGTH =      inv_16bit(msg_size + UDP_PACKET_STRUCT_SIZE);
-    udp_pack->CSUM =        0x0000;
+    udp_pack->CSUM =        0;
 
     memcpy(udp_pack->Payload, msg, msg_size);
     

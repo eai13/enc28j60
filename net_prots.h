@@ -11,7 +11,7 @@
 #define ip_set(ip0, ip1, ip2, ip3) (((uint32_t)(ip3) << 24) | ((uint32_t)(ip2) << 16) | ((uint32_t)(ip1) << 8) | ((uint32_t)(ip0)))
 
 #define LOCAL_IP ip_set(192, 168, 0, 5)
-#define UDP_PORT 5555
+#define UDP_PORT 49002
 
 #define inv_16bit(word) (((((uint16_t)word) >> 8) & 0xFF) | \
                          ((((uint16_t)word) << 8) & 0xFF00))
