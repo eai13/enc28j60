@@ -21,15 +21,31 @@ void ARP_PacketProc(ethernet_packet_t * eth_pack, uint16_t length){
     // Getting the ARP package
     ARP_packet_t * arp_pack = (void *)(eth_pack->Payload);
     // Checking the packet
-    if ((length < ARP_PACKET_STRUCT_SIZE) |
-        (arp_pack->HTYPE != ARP_HTYPE_ETHERNET) |
-        (arp_pack->PTYPE != ARP_PTYPE_IPv4) |
-        (arp_pack->TPA != LOCAL_IP)){
+    if (length < ARP_PACKET_STRUCT_SIZE){
 #ifdef ETHERNET_DEBUG
-        print_er("ARP frame error\r\n");
-        return;
+        print_er("ARP frame error: LENGTH\r\n");
 #endif
+        return;
     }
+    if (arp_pack->HTYPE != ARP_HTYPE_ETHERNET){
+#ifdef ETHERNET_DEBUG
+        print_er("ARP frame error: HTYPE\r\n");
+#endif
+        return;
+    }
+    if (arp_pack->PTYPE != ARP_PTYPE_IPv4){
+#ifdef ETHERNET_DEBUG
+        print_er("ARP frame error: PTYPE\r\n");
+#endif
+        return;
+    }
+    if (arp_pack->TPA != LOCAL_IP){
+#ifdef ETHERNET_DEBUG
+        print_er("ARP frame error: TPA\r\n");
+#endif
+        return;
+    }
+
     // For sending ARP response
     if (arp_pack->OPER == ARP_OPER_REQUEST){
         arp_pack->OPER = ARP_OPER_RESPONSE;

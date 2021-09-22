@@ -190,9 +190,9 @@ uint8_t ENC28J60_Init(void){
 
     // MAC setting up
     Eth_WriteControlRegister(MACON1, (MACON1_MARXEN |
-                                     MACON1_RXPAUS |
-                                     MACON1_TXPAUS |
-                                     MACON1_PASSALL));
+                                      MACON1_RXPAUS |
+                                      MACON1_TXPAUS |
+                                      MACON1_PASSALL));
     Eth_WriteControlRegister(MACON3, MACON3_PADCFG0 |
                                      MACON3_TXCRCEN |
                                      MACON3_FRMLNEN |
